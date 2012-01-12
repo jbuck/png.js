@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="zlib.js"></script>
+  <script type="text/javascript" src="png.js"></script>
+  <script type="text/javascript">
+    function verifyBadges() {
+      // Look for images that have the "verify-badge" class
+      var images = document.querySelectorAll("img.verify-badge");
+
+      for(var i = 0; i < images.length; i++) {
+        var img = images[i],
+            src = img.src,
+            canvas = document.createElement("canvas");
+
+        PNG.load(src, canvas, function(png) {
+          // Look for a tEXt chunk that has openbadgedata
+          if (png.text.openbadges) {
+            var client = new XMLHttpRequest();
+            client.open("GET", png.text.openbadges, true);
+            client.addEventListener("readystatechange", function() {
+              if (client.readyState == 4) {
+                // Until Brian enables CORS on the server, I can't actually
+                // get data from the badge server. Soooo I'm going to assume
+                // that everything just works for the purpose of the demo
+                var ctx = canvas.getContext("2d"),
+                    x = canvas.width / 2,
+                    y = canvas.height / 2,
+                    radius = Math.min(x, y) * 0.8;
+
+                // Draw the circle and checkbox. Pretty!
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(50, 175, 90, 0.85)";
+                ctx.lineWidth = radius*0.2;
+                ctx.arc(x, y, radius, 0, Math.PI * 2, true);
+                ctx.moveTo(x / 2, y * 1.1);
+                ctx.lineTo(x, y * 1.5);
+                ctx.lineTo(x * 1.7, y / 1.9);
+                ctx.stroke();
+
+                img.src = canvas.toDataURL();
+                img.classList.remove("verify-badge");
+                img.classList.add("verified-badge");
+              }
+            }, false);
+            client.send(null);
+          }
+        }, false);
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Validate badges right within your browser</h1>
+    <p>Just press the <button class="btn primary" onclick="javascript:verifyBadges()">validate</button> button.</p>
+    <img class="verify-badge" src="images/html5-preparedbadge.png">
+  </div>
+</body>
+</html>
