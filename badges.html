@@ -4,48 +4,62 @@
   <script type="text/javascript" src="zlib.js"></script>
   <script type="text/javascript" src="png.js"></script>
   <script type="text/javascript">
+    function verifyBadge(img) {
+      PNG.load(img.src, function(png) {
+        var canvas = document.createElement("canvas");
+        png.render(canvas);
+        var ctx = canvas.getContext("2d"),
+            x = canvas.width / 2,
+            y = canvas.height / 2,
+            radius = Math.min(x, y) * 0.8;
+
+        // Look for a tEXt chunk that has openbadgedata
+        if (png.text.openbadges) {
+          var client = new XMLHttpRequest();
+          client.open("GET", png.text.openbadges, true);
+          client.addEventListener("readystatechange", function() {
+            if (client.readyState == 4 && client.status == 200) {
+              // Draw the circle and checkbox. Pretty!
+              ctx.beginPath();
+              ctx.strokeStyle = "rgba(50, 175, 90, 0.85)";
+              ctx.lineWidth = radius*0.2;
+              ctx.arc(x, y, radius, 0, Math.PI * 2, true);
+              ctx.moveTo(x / 2, y * 1.1);
+              ctx.lineTo(x, y * 1.5);
+              ctx.lineTo(x * 1.7, y / 1.9);
+              ctx.stroke();
+
+              img.src = canvas.toDataURL();
+              img.classList.remove("verify-badge");
+              img.classList.add("verified-badge");
+            }
+          }, false);
+          client.send(null);
+        } else {
+          // Draw the cross and checkbox. Pretty!
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(175, 60, 90, 0.85)";
+          ctx.lineWidth = radius*0.2;
+          ctx.arc(x, y, radius, 0, Math.PI * 2, true);
+          ctx.moveTo(x / 4, y / 4);
+          ctx.lineTo(x * 1.75, y * 1.75);
+          ctx.moveTo(x * 1.75, y / 4);
+          ctx.lineTo(x / 4, y * 1.75);
+          ctx.stroke();
+
+          img.src = canvas.toDataURL();
+          img.classList.remove("verify-badge");
+          img.classList.add("verified-badge");
+        }
+      }, false);
+    }
+
     function verifyBadges() {
       // Look for images that have the "verify-badge" class
       var images = document.querySelectorAll("img.verify-badge");
 
       for(var i = 0; i < images.length; i++) {
-        var img = images[i],
-            src = img.src,
-            canvas = document.createElement("canvas");
-
-        PNG.load(src, canvas, function(png) {
-          // Look for a tEXt chunk that has openbadgedata
-          if (png.text.openbadges) {
-            var client = new XMLHttpRequest();
-            client.open("GET", png.text.openbadges, true);
-            client.addEventListener("readystatechange", function() {
-              if (client.readyState == 4) {
-                // Until Brian enables CORS on the server, I can't actually
-                // get data from the badge server. Soooo I'm going to assume
-                // that everything just works for the purpose of the demo
-                var ctx = canvas.getContext("2d"),
-                    x = canvas.width / 2,
-                    y = canvas.height / 2,
-                    radius = Math.min(x, y) * 0.8;
-
-                // Draw the circle and checkbox. Pretty!
-                ctx.beginPath();
-                ctx.strokeStyle = "rgba(50, 175, 90, 0.85)";
-                ctx.lineWidth = radius*0.2;
-                ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-                ctx.moveTo(x / 2, y * 1.1);
-                ctx.lineTo(x, y * 1.5);
-                ctx.lineTo(x * 1.7, y / 1.9);
-                ctx.stroke();
-
-                img.src = canvas.toDataURL();
-                img.classList.remove("verify-badge");
-                img.classList.add("verified-badge");
-              }
-            }, false);
-            client.send(null);
-          }
-        }, false);
+        verifyBadge(images[i]);
       }
     }
   </script>
@@ -56,6 +70,7 @@
     <h1>Validate badges right within your browser</h1>
     <p>Just press the <button class="btn primary" onclick="javascript:verifyBadges()">validate</button> button.</p>
     <img class="verify-badge" src="images/html5-preparedbadge.png">
+    <img class="verify-badge" src="images/JavaScript-logo.png">
   </div>
 </body>
 </html>
